@@ -7,8 +7,10 @@
 # ==============================================================================
 
 
+import gzip
 import hashlib
 import os
+import redis
 import urllib
 
 
@@ -35,10 +37,29 @@ def maybe_download(url, expected_hash):
     return filename
 
 
+def insert_pagetitles_to_redis(filename, host, port, db):
+    """Insert enwiki pagetitles into redis server"""
+    r = redis.StrictRedis(host=host, port=port, db=db)
+    with gzip.open(filename, 'rt', encoding='utf-8') as f:
+        _ = f.readline() # pass sql table name.
+        for idx, row in enumerate(f):
+            tokens = row.rstrip('\n')
+            try:
+                r.set(tokens, idx)
+            except:
+                raise Exception('Failed to connect Redis server.')
+    return idx+1
+
+
 if __name__ == '__main__':
+
     titles_url = 'https://dumps.wikimedia.org/enwiki/20160920/enwiki-20160920-all-titles.gz'
     titles_hash = '9d9aea6dac7d12659f08505988db9e36920c8b58cd6468b2ccf5e0605d96de5d'
-    pages_url = 'https://dumps.wikimedia.org/enwiki/20160920/enwiki-20160920-page.sql.gz'
-    pages_hash = '2f6b27c02852f3bb21b5034afdbe5e596163c216fb89971ad9ac8ca74dee592d'
 
-    filename = maybe_download(titles_url, titles_hash)
+    redis_host = 'localhost'
+    redis_port = 6379
+    redis_db = 0
+
+    titles_filename = maybe_download(titles_url, titles_hash)
+    token_cnt = insert_pagetitles_to_redis(titles_filename, redis_host, redis_port, redis_db)
+    print(token_cnt)
