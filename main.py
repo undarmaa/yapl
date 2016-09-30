@@ -10,8 +10,8 @@
 import gzip
 import hashlib
 import os
-import sqlite3
 import urllib
+from models import WordAndPhraseDictModel
 
 
 def maybe_download(url, expected_hash):
@@ -37,33 +37,6 @@ def maybe_download(url, expected_hash):
     return filename
 
 
-class WordAndPhraseDictModel():
-    def __init__(self, filename):
-        isnt_exist =  not os.path.exists(filename)
-        self.conn = sqlite3.connect(filename)
-        if isnt_exist:
-            self.create_table(filename)
-
-    def create_table(self, filename):
-        c = self.conn.cursor()
-        schema = '''CREATE TABLE phrases(
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        phrase text
-                    );'''
-        c.execute(schema)
-        print('Ccreate sqlite dabase and define table schema.')
-
-    def insert_phrases(self, phrases):
-        """Require tuple list or iter."""
-        c = self.conn.cursor()
-        sql = '''INSERT INTO phrases(phrase) VALUES(?)'''
-        c.executemany(sql, phrases)
-
-    def __del__(self):
-        self.conn.commit()
-        self.conn.close()
-
-
 def insert_pagetitles_to_sqlite3(filename, wp_dict):
     """Insert enwiai pagetitles into sqlite3"""
     if type(wp_dict) != WordAndPhraseDictModel:
@@ -72,7 +45,7 @@ def insert_pagetitles_to_sqlite3(filename, wp_dict):
     with gzip.open(filename, 'rt', encoding='utf-8') as f:
         _ = f.readline() # pass sql table name.
         phrases = map(lambda row: (row.rstrip('\n'), ), f)
-        wp_dict.insert_phrases(phrases)
+        return wp_dict.insert_phrases(phrases)
 
 
 if __name__ == '__main__':
@@ -83,5 +56,6 @@ if __name__ == '__main__':
     sqlite3_filename = 'wp_dict.db'
     wp_dict = WordAndPhraseDictModel(sqlite3_filename)
     titles_filename = maybe_download(titles_url, titles_hash)
-    token_cnt = insert_pagetitles_to_sqlite3(titles_filename, wp_dict)
+    total_cnt = insert_pagetitles_to_sqlite3(titles_filename, wp_dict)
+    print('Inserted {} enwiki pagetitle.'.format(total_cnt))
     print('done!')
