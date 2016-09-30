@@ -5,12 +5,12 @@
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # ==============================================================================
-
-
 import gzip
 import hashlib
 import os
+import re
 import urllib
+
 from models import WordAndPhraseDictModel
 
 
@@ -42,9 +42,35 @@ def insert_pagetitles_to_sqlite3(filename, wp_dict):
     if type(wp_dict) != WordAndPhraseDictModel:
         raise Exception('Falied to access db.')
 
+    ignore_pattern = (
+        re.compile('_\(.*\)$'),
+        re.compile('^[a-zA-z0-9|!-\/:-@\[-`\{-~]*$'),
+        re.compile('(disambiguation)'),
+        re.compile('^Lists_of'),
+    )
+
+    replace_pattern = (
+        (re.compile('^_|_$|,'), ''),
+        (re.compile('_'), ' '),
+    )
+
+    def is_ignore(phrase):
+        for ptn in ignore_pattern:
+            if ptn.match(phrase):
+                return False
+        return True
+
+    def sanitize(phrase):
+        for ptn, repl in replace_pattern:
+            phrase =  ptn.sub(repl, phrase)
+        return phrase
+
     with gzip.open(filename, 'rt', encoding='utf-8') as f:
         _ = f.readline() # pass sql table name.
-        phrases = map(lambda row: (row.rstrip('\n'), ), f)
+        striped_phrases = map(lambda row: row.rstrip('\n'), f)
+        ignored_phrases = filter(is_ignore, striped_phrases)
+        sanitized_phrases = map(sanitize, ignored_phrases)
+        phrases = map(lambda x: (x, ), sanitized_phrases)
         return wp_dict.insert_phrases(phrases)
 
 

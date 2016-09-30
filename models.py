@@ -38,4 +38,3 @@ class WordAndPhraseDictModel():
     def __del__(self):
         self.conn.commit()
         self.conn.close()
-
