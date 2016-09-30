@@ -42,32 +42,27 @@ def insert_pagetitles_to_sqlite3(filename, wp_dict):
     if type(wp_dict) != WordAndPhraseDictModel:
         raise Exception('Falied to access db.')
 
-    ignore_pattern = (
-        re.compile('_\(.*\)$'),
-        re.compile('^[a-zA-z0-9|!-\/:-@\[-`\{-~]*$'),
-        re.compile('(disambiguation)'),
-        re.compile('^Lists_of'),
-    )
-
-    replace_pattern = (
-        (re.compile('^_|_$|,'), ''),
-        (re.compile('_'), ' '),
-    )
-
     def is_ignore(phrase):
-        for ptn in ignore_pattern:
-            if ptn.match(phrase):
-                return False
+        # /_\(.*\)$/
+        if phrase[-1] == ')' and '_(' in phrase: return False
+        # /^[a-zA-z]$/
+        chars = list('abcdefghijklmnopqrstuvwxyz')
+        if len(phrase) == 1 and phrase in chars: return False
+        # /^[0-9|!-\/:-@\[-`\{-~]*$/
+        chars = set('0123456789!-/:-@[-`{~')
+        if len(set(phrase).difference(chars)) == 0: return False
+        # /(disambiguation)/
+        if '(disambiguation)' in phrase: return False
+        # /^Lists_of/
+        if 'Lists_of' == phrase[:8]: return False
         return True
 
     def sanitize(phrase):
-        for ptn, repl in replace_pattern:
-            phrase =  ptn.sub(repl, phrase)
-        return phrase
+        return phrase.lstrip('_').rstrip('_').replace('_', ' ')
 
     with gzip.open(filename, 'rt', encoding='utf-8') as f:
         _ = f.readline() # pass sql table name.
-        striped_phrases = map(lambda row: row.rstrip('\n'), f)
+        striped_phrases = map(lambda row: row.rstrip('\n').lower(), f)
         ignored_phrases = filter(is_ignore, striped_phrases)
         sanitized_phrases = map(sanitize, ignored_phrases)
         phrases = map(lambda x: (x, ), sanitized_phrases)

@@ -21,19 +21,30 @@ class WordAndPhraseDictModel():
 
     def create_table(self, filename):
         c = self.conn.cursor()
-        schema = '''CREATE TABLE phrases(
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        phrase text
-                    );'''
+        schema = '''
+            CREATE TABLE phrases(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                phrase text
+            );
+        '''
         c.execute(schema)
+        index = "CREATE INDEX phrase_index on phrases(phrase);"
+        c.execute(index)
         print('Ccreate sqlite dabase and define table schema.')
 
     def insert_phrases(self, phrases):
         """Require tuple list or iter."""
         c = self.conn.cursor()
         c.executemany('INSERT INTO phrases(phrase) VALUES(?);', phrases)
-        c.execute('SELECT count(id) from phrases;')
+        c.execute('SELECT count(id) FROM phrases;')
         return c.fetchone()[0]
+
+    def is_phrase(self, phrase):
+        """ check phrase is exist. return True if exist."""
+        c = self.conn.cursor()
+        sql = 'SELECT EXISTS(SELECT id FROM phrases WHERE phrase=?);'
+        c.execute(sql, (phrase, ))
+        return c.fetchone()[0] != 0
 
     def __del__(self):
         self.conn.commit()
