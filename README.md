@@ -1,12 +1,8 @@
-# Word and Phrase Dictionary Extracted from Wikipedia on Redis
+# Word and Phrase Dictionary Extracted from Wikipedia on Sqlite
 
 ## How to Use
-
-1. You shold run Redis server
-2. You only run bellow command.
-
 ```
-> python3 enwiki_insert_redis.py
+> python3 main.py
 ```
 
 ## Dataset

@@ -10,7 +10,7 @@
 import gzip
 import hashlib
 import os
-import redis
+import sqlite3
 import urllib
 
 
@@ -37,18 +37,42 @@ def maybe_download(url, expected_hash):
     return filename
 
 
-def insert_pagetitles_to_redis(filename, host, port, db):
-    """Insert enwiki pagetitles into redis server"""
-    r = redis.StrictRedis(host=host, port=port, db=db)
+class WordAndPhraseDictModel():
+    def __init__(self, filename):
+        isnt_exist =  not os.path.exists(filename)
+        self.conn = sqlite3.connect(filename)
+        if isnt_exist:
+            self.create_table(filename)
+
+    def create_table(self, filename):
+        c = self.conn.cursor()
+        schema = '''CREATE TABLE phrases(
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        phrase text
+                    );'''
+        c.execute(schema)
+        print('Ccreate sqlite dabase and define table schema.')
+
+    def insert_phrases(self, phrases):
+        """Require tuple list or iter."""
+        c = self.conn.cursor()
+        sql = '''INSERT INTO phrases(phrase) VALUES(?)'''
+        c.executemany(sql, phrases)
+
+    def __del__(self):
+        self.conn.commit()
+        self.conn.close()
+
+
+def insert_pagetitles_to_sqlite3(filename, wp_dict):
+    """Insert enwiai pagetitles into sqlite3"""
+    if type(wp_dict) != WordAndPhraseDictModel:
+        raise Exception('Falied to access db.')
+
     with gzip.open(filename, 'rt', encoding='utf-8') as f:
         _ = f.readline() # pass sql table name.
-        for idx, row in enumerate(f):
-            tokens = row.rstrip('\n')
-            try:
-                r.set(tokens, idx)
-            except:
-                raise Exception('Failed to connect Redis server.')
-    return idx+1
+        phrases = map(lambda row: (row.rstrip('\n'), ), f)
+        wp_dict.insert_phrases(phrases)
 
 
 if __name__ == '__main__':
@@ -56,10 +80,8 @@ if __name__ == '__main__':
     titles_url = 'https://dumps.wikimedia.org/enwiki/20160920/enwiki-20160920-all-titles.gz'
     titles_hash = '9d9aea6dac7d12659f08505988db9e36920c8b58cd6468b2ccf5e0605d96de5d'
 
-    redis_host = 'localhost'
-    redis_port = 6379
-    redis_db = 0
-
+    sqlite3_filename = 'wp_dict.db'
+    wp_dict = WordAndPhraseDictModel(sqlite3_filename)
     titles_filename = maybe_download(titles_url, titles_hash)
-    token_cnt = insert_pagetitles_to_redis(titles_filename, redis_host, redis_port, redis_db)
-    print(token_cnt)
+    token_cnt = insert_pagetitles_to_sqlite3(titles_filename, wp_dict)
+    print('done!')
