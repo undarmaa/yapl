@@ -5,11 +5,12 @@
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # ==============================================================================
+import argparse
 import gzip
 import hashlib
 import os
 import re
-import urllib
+import urllib.request
 
 from models import WordAndPhraseDictModel
 
@@ -22,7 +23,9 @@ def maybe_download(url, expected_hash):
         raise Exception('Failed to extract filename from url.')
 
     if not os.path.exists(filename):
+        print('Downlod', url, '...')
         filename, _ = urllib.request.urlretrieve(url, filename)
+        print('Downloded.')
 
     sha256 = hashlib.sha256()
     with open(filename, 'rb') as f:
@@ -69,14 +72,34 @@ def insert_pagetitles_to_sqlite3(filename, wp_dict):
         return wp_dict.insert_phrases(phrases)
 
 
-if __name__ == '__main__':
+def main():
+    parser = argparse.ArgumentParser(description='A Handler for Word And Phrae Dictonray.')
+    parser.add_argument('--db-path',
+                action='store',
+                type=str,
+                default='wp_dict.db',
+                help='sqlite3 databese path.',
+            )
+    parser.add_argument('--wiki-titles-url',
+                action='store',
+                type=str,
+                default='https://dumps.wikimedia.org/enwiki/20160920/enwiki-20160920-all-titles.gz',
+                help='wikimedia page titles url for downloading.',
+            )
+    parser.add_argument('--wiki-titles-hash',
+                action='store',
+                type=str,
+                default='9d9aea6dac7d12659f08505988db9e36920c8b58cd6468b2ccf5e0605d96de5d',
+                help='wikimedia page titles sha256 hash for validation.',
+            )
+    args = parser.parse_args()
 
-    titles_url = 'https://dumps.wikimedia.org/enwiki/20160920/enwiki-20160920-all-titles.gz'
-    titles_hash = '9d9aea6dac7d12659f08505988db9e36920c8b58cd6468b2ccf5e0605d96de5d'
-
-    sqlite3_filename = 'wp_dict.db'
-    wp_dict = WordAndPhraseDictModel(sqlite3_filename)
-    titles_filename = maybe_download(titles_url, titles_hash)
+    wp_dict = WordAndPhraseDictModel(args.db_path)
+    titles_filename = maybe_download(args.wiki_titles_url, args.wiki_titles_hash)
     total_cnt = insert_pagetitles_to_sqlite3(titles_filename, wp_dict)
     print('Inserted {} enwiki pagetitle.'.format(total_cnt))
     print('done!')
+
+
+if __name__ == '__main__':
+    main()
