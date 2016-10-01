@@ -1,4 +1,6 @@
-# Word and Phrase Dictionary Extracted from Wikipedia on SQLite.
+# Word and Phrase Dictionary Extracted from Wikipedia
+
+This script extracts word and phrase from wikipedia page titles and insterts theses data into SQLite3 database. 
 
 ## Usage
 ```
