@@ -16,7 +16,7 @@ optional arguments:
   --wiki-titles-url WIKI_TITLES_URL
                         wikimedia page titles url for downloading.
   --wiki-titles-hash WIKI_TITLES_HASH
-                        wikimedia page titles sha256 hash for validation.
+                        wikimedia page titles sha1 hash for validation.
 ```
 
 Default settings is here.
@@ -25,7 +25,7 @@ Default settings is here.
 |:--|:--|
 | --db-path | wp_dict.db |
 | --wiki-titles-url | https://dumps.wikimedia.org/enwiki/20160920/enwiki-20160920-all-titles.gz |
-| --wiki-titles-hash | 9d9aea6dac7d12659f08505988db9e36920c8b58cd6468b2ccf5e0605d96de5d |
+| --wiki-titles-hash | 12c769accf4dbbe928562035fb8f3f45acf0e935 |
 
 ### Setup
 

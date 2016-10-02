@@ -16,7 +16,7 @@ from models import WordAndPhraseDictModel
 
 
 def maybe_download(url, expected_hash):
-    """Download a file from url if not present, and make sure it's sha256 hash. """
+    """Download a file from url if not present, and make sure it's sha1 hash. """
     try:
         filename = url.split('/')[-1]
     except:
@@ -27,11 +27,11 @@ def maybe_download(url, expected_hash):
         filename, _ = urllib.request.urlretrieve(url, filename)
         print('Downloded.')
 
-    sha256 = hashlib.sha256()
+    sha1 = hashlib.sha1()
     with open(filename, 'rb') as f:
-        for chunk in iter(lambda: f.read(2048 * sha256.block_size), b''):
-            sha256.update(chunk)
-    checksum = sha256.hexdigest()
+        for chunk in iter(lambda: f.read(2048 * sha1.block_size), b''):
+            sha1.update(chunk)
+    checksum = sha1.hexdigest()
     if checksum == expected_hash:
         print('Found and verified', filename)
     else:
@@ -89,17 +89,30 @@ def main():
     parser.add_argument('--wiki-titles-hash',
                 action='store',
                 type=str,
-                default='9d9aea6dac7d12659f08505988db9e36920c8b58cd6468b2ccf5e0605d96de5d',
-                help='wikimedia page titles sha256 hash for validation.',
+                default='12c769accf4dbbe928562035fb8f3f45acf0e935',
+                help='wikimedia page titles sha1 hash for validation.',
             )
+    #parser.add_argument('--wiki-articles-url',
+    #            action='store',
+    #            type=str,
+    #            default='https://dumps.wikimedia.org/enwiki/20160920/enwiki-20160920-pages-articles.xml.bz2',
+    #            help='wikimedia pages articles url for downloading.',
+    #        )
+    #parser.add_argument('--wiki-articles-hash',
+    #            action='store',
+    #            type=str,
+    #            default='ffd929d8e3a1a48ced4785cc7726a6eaca8e3a6b',
+    #            help='wikimedia page articles sha1 hash for validation.',
+    #        )
     args = parser.parse_args()
 
     wp_dict = WordAndPhraseDictModel(args.db_path)
+
     titles_filename = maybe_download(args.wiki_titles_url, args.wiki_titles_hash)
     total_cnt = insert_pagetitles_to_sqlite3(titles_filename, wp_dict)
     print('Inserted {} enwiki pagetitle.'.format(total_cnt))
-    print('done!')
 
+    print('done!')
 
 if __name__ == '__main__':
     main()
