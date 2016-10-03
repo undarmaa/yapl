@@ -1,11 +1,10 @@
-# Word and Phrase Dictionary Extracted from Wikipedia
-
-This script extracts word and phrase from wikipedia page titles and insterts theses data into SQLite3 database. 
+# YAPL - Yet Another Phrase Lexicon
+Word and Phrase Lexicon Extracted from Wikipedia to SQLite3.
 
 ## Usage
 ```
-$ python3 main.py -h
-usage: main.py [-h] [--db-path DB_PATH] [--wiki-titles-url WIKI_TITLES_URL]
+$ python3 yapl.py -h
+usage: yapl.py [-h] [--db-path DB_PATH] [--wiki-titles-url WIKI_TITLES_URL]
                [--wiki-titles-hash WIKI_TITLES_HASH]
 
 A Handler for Word And Phrae Dictonray.
@@ -23,15 +22,16 @@ Default settings is here.
 
 | arguments | default value |
 |:--|:--|
-| --db-path | wp_dict.db |
+| --db-path | yapl.db |
 | --wiki-titles-url | https://dumps.wikimedia.org/enwiki/20160920/enwiki-20160920-all-titles.gz |
 | --wiki-titles-hash | 12c769accf4dbbe928562035fb8f3f45acf0e935 |
 
 ### Setup
 
 Download and Create Dictionary as SQLite DB.
+
 ```
-$ python3 main.py
+$ python3 yapl.py
 ```
 
 ### Basics

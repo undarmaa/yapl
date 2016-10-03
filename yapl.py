@@ -12,7 +12,7 @@ import os
 import re
 import urllib.request
 
-from models import WordAndPhraseDictModel
+from models import PhraseLexiconModel
 
 
 def maybe_download(url, expected_hash):
@@ -42,7 +42,7 @@ def maybe_download(url, expected_hash):
 
 def insert_pagetitles_to_sqlite3(filename, wp_dict):
     """Insert enwiai pagetitles into sqlite3"""
-    if type(wp_dict) != WordAndPhraseDictModel:
+    if type(wp_dict) != PhraseLexiconModel:
         raise Exception('Falied to access db.')
 
     def is_ignore(phrase):
@@ -77,7 +77,7 @@ def main():
     parser.add_argument('--db-path',
                 action='store',
                 type=str,
-                default='wp_dict.db',
+                default='yapl.sqlite',
                 help='sqlite3 databese path.',
             )
     parser.add_argument('--wiki-titles-url',
@@ -92,6 +92,8 @@ def main():
                 default='12c769accf4dbbe928562035fb8f3f45acf0e935',
                 help='wikimedia page titles sha1 hash for validation.',
             )
+
+    # TODO
     #parser.add_argument('--wiki-articles-url',
     #            action='store',
     #            type=str,
@@ -104,12 +106,13 @@ def main():
     #            default='ffd929d8e3a1a48ced4785cc7726a6eaca8e3a6b',
     #            help='wikimedia page articles sha1 hash for validation.',
     #        )
+
     args = parser.parse_args()
 
-    wp_dict = WordAndPhraseDictModel(args.db_path)
+    lexicon = PhraseLexiconModel(args.db_path)
 
     titles_filename = maybe_download(args.wiki_titles_url, args.wiki_titles_hash)
-    total_cnt = insert_pagetitles_to_sqlite3(titles_filename, wp_dict)
+    total_cnt = insert_pagetitles_to_sqlite3(titles_filename, lexicon)
     print('Inserted {} enwiki pagetitle.'.format(total_cnt))
 
     print('done!')

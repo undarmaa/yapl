@@ -1,6 +1,7 @@
 # Application Specific
 *.gz
-*.db
+*.sqlite
+*.bz2
 
 # Created by https://www.gitignore.io/api/python,redis,macos
 

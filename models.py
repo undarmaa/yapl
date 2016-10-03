@@ -9,8 +9,8 @@ import os
 import sqlite3
 
 
-class WordAndPhraseDictModel():
-    """ A model for handling data on sqlite db."""
+class PhraseLexiconModel():
+    """A model for handling data on sqlite db."""
 
     def __init__(self, filename):
         isnt_exist =  not os.path.exists(filename)
@@ -40,7 +40,7 @@ class WordAndPhraseDictModel():
         return c.fetchone()[0]
 
     def is_phrase(self, phrase):
-        """ check phrase is exist. return True if exist."""
+        """return True if arugment is phrase."""
         c = self.conn.cursor()
         sql = 'SELECT EXISTS(SELECT id FROM phrases WHERE phrase=?);'
         c.execute(sql, (phrase, ))
