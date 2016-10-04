@@ -40,8 +40,8 @@ $ python3 yapl.py
 ```
 $ python3
 >>> from models import WordAndPhraseDictModel
->>> wp_dict = WordAndPhraseDictModel('./wp_dict.db')
->>> wp_dict.is_phrase('ntt')
+>>> lexicon = PhraseLexiconModel('yapl.db')
+>>> lexicon.is_phrase('ntt')
 True
 ```
 
