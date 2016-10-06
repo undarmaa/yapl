@@ -2,6 +2,7 @@
 *.gz
 *.sqlite
 *.bz2
+wikiextractor
 
 # Created by https://www.gitignore.io/api/python,redis,macos
 

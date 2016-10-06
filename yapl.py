@@ -6,13 +6,16 @@
 #
 # ==============================================================================
 import argparse
+import bz2
+from collections import Counter
 import gzip
 import hashlib
+from html.parser import HTMLParser
+from models import PhraseLexiconModel
+from nltk.tokenize import word_tokenize
 import os
 import re
 import urllib.request
-
-from models import PhraseLexiconModel
 
 
 def maybe_download(url, expected_hash):
@@ -72,6 +75,10 @@ def insert_pagetitles_to_sqlite3(filename, wp_dict):
         return wp_dict.insert_phrases(phrases)
 
 
+def make_phrase_candidate(articles_filename):
+    pass
+
+
 def main():
     parser = argparse.ArgumentParser(description='A Handler for Word And Phrae Dictonray.')
     parser.add_argument('--db-path',
@@ -93,29 +100,44 @@ def main():
                 help='wikimedia page titles sha1 hash for validation.',
             )
 
-    # TODO
-    #parser.add_argument('--wiki-articles-url',
-    #            action='store',
-    #            type=str,
-    #            default='https://dumps.wikimedia.org/enwiki/20160920/enwiki-20160920-pages-articles.xml.bz2',
-    #            help='wikimedia pages articles url for downloading.',
-    #        )
-    #parser.add_argument('--wiki-articles-hash',
-    #            action='store',
-    #            type=str,
-    #            default='ffd929d8e3a1a48ced4785cc7726a6eaca8e3a6b',
-    #            help='wikimedia page articles sha1 hash for validation.',
-    #        )
-
+    parser.add_argument('--wiki-articles-url',
+                action='store',
+                type=str,
+                default='https://dumps.wikimedia.org/enwiki/20160920/enwiki-20160920-pages-articles.xml.bz2',
+                help='wikimedia pages articles url for downloading.',
+            )
+    parser.add_argument('--wiki-articles-hash',
+                action='store',
+                type=str,
+                default='ffd929d8e3a1a48ced4785cc7726a6eaca8e3a6b',
+                help='wikimedia page articles sha1 hash for validation.',
+            )
+    parser.add_argument('--wiki-articles-text',
+                action='store',
+                type=str,
+                default='wikiextractor/extracted/*.bz2',
+                help='a path of wikimedia page articles text.',
+            )
     args = parser.parse_args()
 
     lexicon = PhraseLexiconModel(args.db_path)
 
     titles_filename = maybe_download(args.wiki_titles_url, args.wiki_titles_hash)
-    total_cnt = insert_pagetitles_to_sqlite3(titles_filename, lexicon)
-    print('Inserted {} enwiki pagetitle.'.format(total_cnt))
+    #total_cnt = insert_pagetitles_to_sqlite3(titles_filename, lexicon)
+    #print('Inserted {} enwiki pagetitle.'.format(total_cnt))
+
+    articles_filename = maybe_download(args.wiki_articles_url, args.wiki_articles_hash)
+    make_phrase_candidate(articles_filename)
+
+    while True:
+        _ = input('If you already extracted text from wiki articles, press any key.')
+        if os.path.exists(args.wiki_articles_text):↲
+            break
+        else:
+            print('Not found wikimedia articles text file. See README.')
 
     print('done!')
+
 
 if __name__ == '__main__':
     main()
