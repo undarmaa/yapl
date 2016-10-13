@@ -116,18 +116,19 @@ def main():
     lexicon = PhraseLexiconModel(args.db_path)
 
     titles_filename = maybe_download(args.wiki_titles_url, args.wiki_titles_hash)
-    #total_cnt = insert_pagetitles_to_sqlite3(titles_filename, lexicon)
-    #print('Inserted {} enwiki pagetitle.'.format(total_cnt))
+    total_cnt = insert_pagetitles_to_sqlite3(titles_filename, lexicon)
+    print('Inserted {} enwiki pagetitle.'.format(total_cnt))
 
-    articles_filename = maybe_download(args.wiki_articles_url, args.wiki_articles_hash)
-    make_phrase_candidate(articles_filename)
+    #TODO
+    #articles_filename = maybe_download(args.wiki_articles_url, args.wiki_articles_hash)
+    #make_phrase_candidate(articles_filename)
 
-    while True:
-        _ = input('If you already extracted text from wiki articles, press any key.')
-        if os.path.exists(args.wiki_articles_text):↲
-            break
-        else:
-            print('Not found wikimedia articles text file. See README.')
+    #while True:
+    #    _ = input('If you already extracted text from wiki articles, press any key.')
+    #    if os.path.exists(args.wiki_articles_text):↲
+    #        break
+    #    else:
+    #        print('Not found wikimedia articles text file. See README.')
 
     print('done!')
 
