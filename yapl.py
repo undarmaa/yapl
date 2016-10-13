@@ -1,13 +1,15 @@
 import argparse
 import bz2
-from collections import Counter
+from collections import Counter, defaultdict
 import gzip
+import glob
 import hashlib
 from html.parser import HTMLParser
 from models import PhraseLexiconModel
 from nltk.tokenize import word_tokenize
 import os
 import re
+import subprocess
 import urllib.request
 
 
@@ -41,7 +43,7 @@ def insert_pagetitles_to_sqlite3(filename, wp_dict):
     if type(wp_dict) != PhraseLexiconModel:
         raise Exception('Falied to access db.')
 
-    def is_ignore(phrase):
+    def isnt_ignore(phrase):
         # /_\(.*\)$/
         if phrase[-1] == ')' and '_(' in phrase: return False
         # /^[a-zA-z]$/
@@ -62,14 +64,37 @@ def insert_pagetitles_to_sqlite3(filename, wp_dict):
     with gzip.open(filename, 'rt', encoding='utf-8') as f:
         _ = f.readline() # pass sql table name.
         striped_phrases = map(lambda row: row.rstrip('\n').lower(), f)
-        ignored_phrases = filter(is_ignore, striped_phrases)
+        ignored_phrases = filter(isnt_ignore, striped_phrases)
         sanitized_phrases = map(sanitize, ignored_phrases)
         phrases = map(lambda x: (x, ), sanitized_phrases)
         return wp_dict.insert_phrases(phrases)
 
 
 def make_phrase_candidate(articles_filename):
-    pass
+    TXTS_DIR = 'wikiextractor/extracted'
+    # extract text from xml using wikiextractor
+    cmd_to_extract_text = [
+        'python3',
+        'wikiextractor/WikiExtractor.py',
+        './enwiki-20160920-pages-articles.xml.bz2',
+        '-c',
+        '-o', 'this', #TODO
+        '-q'
+    ]
+    print('Extracting text from wiki xml ...')
+    #subprocess.call(cmd_to_extract_text) TODO
+
+    unigrams = Counter()
+    bigrams = defaultdict(lambda :defaultdict(int))
+    print('Search phrase candidates ...')
+    for articlefile in  glob.glob('./wikiextractor/extracted/*/*.bz2'):
+        print(articlefile)
+        with gzip.open(articlefile, 'rt', encoding='utf-8') as f:
+            txt = f.readlines()[1:-1] # pass <doc *> and </doc> tags.
+        tokens = word_tokenize(txt)
+        unigrams += Counter(tokens)
+        for t1, t2 in zip(tokens, tokens[1:]):
+            bigrams[t1][t2] += 1
 
 
 def main():
@@ -105,30 +130,16 @@ def main():
                 default='ffd929d8e3a1a48ced4785cc7726a6eaca8e3a6b',
                 help='wikimedia page articles sha1 hash for validation.',
             )
-    parser.add_argument('--wiki-articles-text',
-                action='store',
-                type=str,
-                default='wikiextractor/extracted/*.bz2',
-                help='a path of wikimedia page articles text.',
-            )
     args = parser.parse_args()
 
     lexicon = PhraseLexiconModel(args.db_path)
 
-    titles_filename = maybe_download(args.wiki_titles_url, args.wiki_titles_hash)
-    total_cnt = insert_pagetitles_to_sqlite3(titles_filename, lexicon)
-    print('Inserted {} enwiki pagetitle.'.format(total_cnt))
+    #titles_filename = maybe_download(args.wiki_titles_url, args.wiki_titles_hash)
+    #total_cnt = insert_pagetitles_to_sqlite3(titles_filename, lexicon)
+    #print('Inserted {} enwiki pagetitle.'.format(total_cnt))
 
-    #TODO
-    #articles_filename = maybe_download(args.wiki_articles_url, args.wiki_articles_hash)
-    #make_phrase_candidate(articles_filename)
-
-    #while True:
-    #    _ = input('If you already extracted text from wiki articles, press any key.')
-    #    if os.path.exists(args.wiki_articles_text):↲
-    #        break
-    #    else:
-    #        print('Not found wikimedia articles text file. See README.')
+    articles_filename = maybe_download(args.wiki_articles_url, args.wiki_articles_hash)
+    make_phrase_candidate(articles_filename)
 
     print('done!')
 
