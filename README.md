@@ -38,4 +38,6 @@ True
 ```
 
 ## Dataset
-- [Wikimedia Downloads](https://dumps.wikimedia.org/)
+This project uses [wikimedia](https://dumps.wikimedia.org/) dataset for test.  
+these test datasets under the GNU Free Documentation License (GFDL) and the [Creative Commons Attribution-Share-Alike 3.0 License](https://creativecommons.org/licenses/by-sa/3.0/).
+
