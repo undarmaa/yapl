@@ -5,7 +5,10 @@ import gzip
 import glob
 import hashlib
 from html.parser import HTMLParser
+from itertools import chain
+import math
 from models import PhraseLexiconModel
+from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 import os
 import re
@@ -38,9 +41,9 @@ def maybe_download(url, expected_hash):
     return filename
 
 
-def insert_pagetitles_to_sqlite3(filename, wp_dict):
+def insert_pagetitles_to_sqlite3(filename, lexicon):
     """Insert enwiai pagetitles into sqlite3"""
-    if type(wp_dict) != PhraseLexiconModel:
+    if type(lexicon) != PhraseLexiconModel:
         raise Exception('Falied to access db.')
 
     def isnt_ignore(phrase):
@@ -67,11 +70,15 @@ def insert_pagetitles_to_sqlite3(filename, wp_dict):
         ignored_phrases = filter(isnt_ignore, striped_phrases)
         sanitized_phrases = map(sanitize, ignored_phrases)
         phrases = map(lambda x: (x, ), sanitized_phrases)
-        return wp_dict.insert_phrases(phrases)
+        return lexicon.insert_phrases(phrases)
 
 
-def make_phrase_candidate(articles_filename, extracted_dir):
-    TXTS_DIR = 'wikiextractor/extracted'
+def get_phrases_from_articles(articles_filename, extracted_dir, lexicon):
+    """get phrases from wikimedia articles"""
+    if type(lexicon) != PhraseLexiconModel:
+        raise Exception('Falied to access db.')
+
+    print('Extracting text from wiki xml ...')
     # extract text from xml using wikiextractor
     cmd_to_extract_text = [
         'python3',
@@ -80,21 +87,33 @@ def make_phrase_candidate(articles_filename, extracted_dir):
         '-o', extracted_dir,
         '-q'
     ]
-    print('Extracting text from wiki xml ...')
     subprocess.call(cmd_to_extract_text)
-    exit()
+
+    print('Search phrase candidates ...')
+    mystopwords = ',.()[]{}:;\'"+=_-^&*%$#@!~`|\\<>?/'
+    sw = stopwords.words("english") + list(mystopwords)
+    phrases = []
+    threshold = 1000
     unigrams = Counter()
     bigrams = defaultdict(lambda :defaultdict(int))
-    print('Search phrase candidates ...')
     for articlefile in  glob.glob(extracted_dir + '/*/*'):
-        print(articlefile)
         with open(articlefile, 'r', encoding='utf-8') as f:
             txt = f.readlines()[1:-1] # pass <doc *> and </doc> tags.
-        tokens = word_tokenize(txt)
+        tokens = list(map(lambda t: t.lower(),
+                          chain.from_iterable(map(word_tokenize, txt))))
         unigrams += Counter(tokens)
         for t1, t2 in zip(tokens, tokens[1:]):
             bigrams[t1][t2] += 1
-    print(unigrams)
+    phrase_candidates = []
+    count_all_tokens = sum(unigrams.values())
+    for token1, subtree in bigrams.items():
+        count_cond_tokens = sum(subtree.values())
+        for token2, count in subtree.items():
+            # pmi = log p_xy / p_x
+            pmi = (count / count_cond_tokens) / (count_cond_tokens / count_all_tokens)
+            if pmi >= threshold and token1 not in sw and token2 not in sw:
+                phrases.append(token1 + ' ' + token2)
+    return lexicon.insert_phrases(map(lambda x: (x, ), phrases))
 
 
 def main():
@@ -137,12 +156,12 @@ def main():
     titles_filename = maybe_download(args.wiki_titles_url, args.wiki_titles_hash)
     print('start insertng enwiki pagetitles...')
     total_cnt = insert_pagetitles_to_sqlite3(titles_filename, lexicon)
-    print('inserted {} pagetitles'.format(total_cnt))
 
     articles_filename = maybe_download(args.wiki_articles_url, args.wiki_articles_hash)
     print('start making phrases from articles...')
-    make_phrase_candidate(articles_filename, args.wiki_extracted_dir)
+    total_cnt = get_phrases_from_articles(articles_filename, args.wiki_extracted_dir, lexicon)
 
+    print('inserted {} pagetitles'.format(total_cnt))
     print('done!')
 
 
