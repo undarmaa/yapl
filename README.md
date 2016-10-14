@@ -18,23 +18,12 @@ optional arguments:
                         wikimedia page titles sha1 hash for validation.
 ```
 
-Default settings is here.
-
-| arguments | default value |
-|:--|:--|
-| --db-path | yapl.db |
-| --wiki-titles-url | https://dumps.wikimedia.org/enwiki/20160920/enwiki-20160920-all-titles.gz |
-| --wiki-titles-hash | 12c769accf4dbbe928562035fb8f3f45acf0e935 |
-| --wiki-articles-url | https://dumps.wikimedia.org/enwiki/20160920/enwiki-20160920-pages-articles.xml.bz2 |
-| --wiki-articles-hash | ffd929d8e3a1a48ced4785cc7726a6eaca8e3a6b |
-| --wiki-articles-text | |
-
 ### Install
 
 Download and Create Dictionary as SQLite DB.
 
 ```
-$ python3 yapl.py
+$ ./install.sh
 ```
 
 ### Basics
@@ -42,7 +31,7 @@ $ python3 yapl.py
 #### Is it phrase?
 ```
 $ python3
->>> from models import WordAndPhraseDictModel
+>>> from yapl.models import WordAndPhraseDictModel
 >>> lexicon = PhraseLexiconModel('yapl.db')
 >>> lexicon.is_phrase('ntt')
 True
