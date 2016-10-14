@@ -70,24 +70,23 @@ def insert_pagetitles_to_sqlite3(filename, wp_dict):
         return wp_dict.insert_phrases(phrases)
 
 
-def make_phrase_candidate(articles_filename):
+def make_phrase_candidate(articles_filename, extracted_dir):
     TXTS_DIR = 'wikiextractor/extracted'
     # extract text from xml using wikiextractor
     cmd_to_extract_text = [
         'python3',
-        'wikiextractor/WikiExtractor.py',
+        './yapl/wikiextractor/WikiExtractor.py',
         './enwiki-20160920-pages-articles.xml.bz2',
-        '-c',
-        '-o', 'this', #TODO
+        '-o', extracted_dir,
         '-q'
     ]
     print('Extracting text from wiki xml ...')
-    #subprocess.call(cmd_to_extract_text) TODO
-
+    subprocess.call(cmd_to_extract_text)
+    exit()
     unigrams = Counter()
     bigrams = defaultdict(lambda :defaultdict(int))
     print('Search phrase candidates ...')
-    for articlefile in  glob.glob('./wikiextractor/extracted/*/*.bz2'):
+    for articlefile in  glob.glob('./yapl/wikiextractor/extracted/*/*.bz2'):
         print(articlefile)
         with gzip.open(articlefile, 'rt', encoding='utf-8') as f:
             txt = f.readlines()[1:-1] # pass <doc *> and </doc> tags.
@@ -102,33 +101,33 @@ def main():
     parser.add_argument('--db-path',
                 action='store',
                 type=str,
-                default='yapl.sqlite',
                 help='sqlite3 databese path.',
             )
     parser.add_argument('--wiki-titles-url',
                 action='store',
                 type=str,
-                default='https://dumps.wikimedia.org/enwiki/20160920/enwiki-20160920-all-titles.gz',
                 help='wikimedia page titles url for downloading.',
             )
     parser.add_argument('--wiki-titles-hash',
                 action='store',
                 type=str,
-                default='12c769accf4dbbe928562035fb8f3f45acf0e935',
                 help='wikimedia page titles sha1 hash for validation.',
             )
 
     parser.add_argument('--wiki-articles-url',
                 action='store',
                 type=str,
-                default='https://dumps.wikimedia.org/enwiki/20160920/enwiki-20160920-pages-articles.xml.bz2',
                 help='wikimedia pages articles url for downloading.',
             )
     parser.add_argument('--wiki-articles-hash',
                 action='store',
                 type=str,
-                default='ffd929d8e3a1a48ced4785cc7726a6eaca8e3a6b',
                 help='wikimedia page articles sha1 hash for validation.',
+            )
+    parser.add_argument('--wiki-extracted-dir',
+                action='store',
+                type=str,
+                help='directory path of extracted xml using wikiextractor',
             )
     args = parser.parse_args()
 
@@ -139,7 +138,7 @@ def main():
     #print('Inserted {} enwiki pagetitle.'.format(total_cnt))
 
     articles_filename = maybe_download(args.wiki_articles_url, args.wiki_articles_hash)
-    make_phrase_candidate(articles_filename)
+    make_phrase_candidate(articles_filename, args.wiki_extracted_dir)
 
     print('done!')
 
