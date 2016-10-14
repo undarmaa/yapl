@@ -2,10 +2,9 @@
 *.gz
 *.sqlite
 *.bz2
-!test_wiki-all-titles.bz2
+!test_wiki-all-titles.gz
 !test_wiki-pages-articles.bz2
 test_extracted
-
 # Created by https://www.gitignore.io/api/python,redis,macos
 
 ### Python ###
