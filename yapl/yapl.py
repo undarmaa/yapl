@@ -34,7 +34,7 @@ def maybe_download(url, expected_hash):
         print('Found and verified', filename)
     else:
         print(checksum)
-        raise Exception('Failed to verify' + filename + '. Can you check url.')
+        raise Exception('Failed to verify ' + filename + '. Can you check url.')
     return filename
 
 
@@ -76,7 +76,7 @@ def make_phrase_candidate(articles_filename, extracted_dir):
     cmd_to_extract_text = [
         'python3',
         './yapl/wikiextractor/WikiExtractor.py',
-        './enwiki-20160920-pages-articles.xml.bz2',
+        articles_filename,
         '-o', extracted_dir,
         '-q'
     ]
@@ -86,14 +86,15 @@ def make_phrase_candidate(articles_filename, extracted_dir):
     unigrams = Counter()
     bigrams = defaultdict(lambda :defaultdict(int))
     print('Search phrase candidates ...')
-    for articlefile in  glob.glob('./yapl/wikiextractor/extracted/*/*.bz2'):
+    for articlefile in  glob.glob(extracted_dir + '/*/*'):
         print(articlefile)
-        with gzip.open(articlefile, 'rt', encoding='utf-8') as f:
+        with open(articlefile, 'r', encoding='utf-8') as f:
             txt = f.readlines()[1:-1] # pass <doc *> and </doc> tags.
         tokens = word_tokenize(txt)
         unigrams += Counter(tokens)
         for t1, t2 in zip(tokens, tokens[1:]):
             bigrams[t1][t2] += 1
+    print(unigrams)
 
 
 def main():
@@ -133,11 +134,13 @@ def main():
 
     lexicon = PhraseLexiconModel(args.db_path)
 
-    #titles_filename = maybe_download(args.wiki_titles_url, args.wiki_titles_hash)
-    #total_cnt = insert_pagetitles_to_sqlite3(titles_filename, lexicon)
-    #print('Inserted {} enwiki pagetitle.'.format(total_cnt))
+    titles_filename = maybe_download(args.wiki_titles_url, args.wiki_titles_hash)
+    print('start insertng enwiki pagetitles...')
+    total_cnt = insert_pagetitles_to_sqlite3(titles_filename, lexicon)
+    print('inserted {} pagetitles'.format(total_cnt))
 
     articles_filename = maybe_download(args.wiki_articles_url, args.wiki_articles_hash)
+    print('start making phrases from articles...')
     make_phrase_candidate(articles_filename, args.wiki_extracted_dir)
 
     print('done!')
