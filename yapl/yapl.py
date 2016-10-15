@@ -7,13 +7,15 @@ import hashlib
 from html.parser import HTMLParser
 from itertools import chain
 import math
-from models import PhraseLexiconModel
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
 import os
 import re
 import subprocess
 import urllib.request
+
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+
+from models import PhraseLexiconModel
 
 
 def maybe_download(url, expected_hash):
@@ -41,8 +43,8 @@ def maybe_download(url, expected_hash):
     return filename
 
 
-def insert_pagetitles_to_sqlite3(filename, lexicon):
-    """Insert enwiai pagetitles into sqlite3"""
+def insert_pagetitles_to_lexicon(filename, lexicon):
+    """Insert enwiai pagetitles into sqlite3 via lexicon model"""
     if type(lexicon) != PhraseLexiconModel:
         raise Exception('Falied to access db.')
 
@@ -73,7 +75,7 @@ def insert_pagetitles_to_sqlite3(filename, lexicon):
         return lexicon.insert_phrases(phrases)
 
 
-def get_phrases_from_articles(articles_filename, extracted_dir, lexicon):
+def insert_articles_to_lexicon(articles_filename, extracted_dir, lexicon):
     """get phrases from wikimedia articles"""
     if type(lexicon) != PhraseLexiconModel:
         raise Exception('Falied to access db.')
@@ -158,11 +160,11 @@ def main():
 
     titles_filename = maybe_download(args.wiki_titles_url, args.wiki_titles_hash)
     print('start insertng enwiki pagetitles...')
-    total_cnt = insert_pagetitles_to_sqlite3(titles_filename, lexicon)
+    total_cnt = insert_pagetitles_to_lexicon(titles_filename, lexicon)
 
     articles_filename = maybe_download(args.wiki_articles_url, args.wiki_articles_hash)
     print('start making phrases from articles...')
-    total_cnt = get_phrases_from_articles(articles_filename, args.wiki_extracted_dir, lexicon)
+    total_cnt = insert_articles_to_lexicon(articles_filename, args.wiki_extracted_dir, lexicon)
 
     print('inserted {} pagetitles'.format(total_cnt))
     print('done!')
