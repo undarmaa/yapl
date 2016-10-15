@@ -78,7 +78,6 @@ def get_phrases_from_articles(articles_filename, extracted_dir, lexicon):
     if type(lexicon) != PhraseLexiconModel:
         raise Exception('Falied to access db.')
 
-    print('Extracting text from wiki xml ...')
     # extract text from xml using wikiextractor
     cmd_to_extract_text = [
         'python3',
@@ -87,7 +86,11 @@ def get_phrases_from_articles(articles_filename, extracted_dir, lexicon):
         '-o', extracted_dir,
         '-q'
     ]
-    subprocess.call(cmd_to_extract_text)
+    if not os.path.exists(extracted_dir):
+        print('Extracting text from wiki xml ...')
+        subprocess.call(cmd_to_extract_text)
+    else:
+        print('Found extracted text')
 
     print('Search phrase candidates ...')
     mystopwords = ',.()[]{}:;\'"+=_-^&*%$#@!~`|\\<>?/'

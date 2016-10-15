@@ -7,5 +7,3 @@ python3 yapl/yapl.py \
     --wiki-articles-url=http://localhost/FAKE_PATH/test_wiki-pages-articles.bz2\
     --wiki-articles-hash=48eb4d263d798ce1a9a79697e1c85a27afd1b2ef\
     --wiki-extracted-dir=./test_extracted
-
-rm test_yapl.sqlite
