@@ -6,6 +6,9 @@ Word and Phrase Lexicon Extracted from Wikipedia to SQLite3.
 $ python3 yapl.py -h
 usage: yapl.py [-h] [--db-path DB_PATH] [--wiki-titles-url WIKI_TITLES_URL]
                [--wiki-titles-hash WIKI_TITLES_HASH]
+               [--wiki-articles-url WIKI_ARTICLES_URL]
+               [--wiki-articles-hash WIKI_ARTICLES_HASH]
+               [--wiki-extracted-dir WIKI_EXTRACTED_DIR]
 
 A Handler for Word And Phrae Dictonray.
 
@@ -16,6 +19,12 @@ optional arguments:
                         wikimedia page titles url for downloading.
   --wiki-titles-hash WIKI_TITLES_HASH
                         wikimedia page titles sha1 hash for validation.
+  --wiki-articles-url WIKI_ARTICLES_URL
+                        wikimedia pages articles url for downloading.
+  --wiki-articles-hash WIKI_ARTICLES_HASH
+                        wikimedia page articles sha1 hash for validation.
+  --wiki-extracted-dir WIKI_EXTRACTED_DIR
+                        directory path of extracted xml using wikiextractor
 ```
 
 ### Install
