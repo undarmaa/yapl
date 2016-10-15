@@ -10,7 +10,7 @@ usage: yapl.py [-h] [--db-path DB_PATH] [--wiki-titles-url WIKI_TITLES_URL]
                [--wiki-articles-hash WIKI_ARTICLES_HASH]
                [--wiki-extracted-dir WIKI_EXTRACTED_DIR]
 
-A Handler for Word And Phrae Dictonray.
+A Script for Create Phrae Lexicon Databse
 
 optional arguments:
   -h, --help            show this help message and exit
