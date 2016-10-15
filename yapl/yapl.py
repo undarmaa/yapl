@@ -120,7 +120,7 @@ def get_phrases_from_articles(articles_filename, extracted_dir, lexicon):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='A Handler for Word And Phrae Dictonray.')
+    parser = argparse.ArgumentParser(description='A Script for Create Phrae Lexicon Databse')
     parser.add_argument('--db-path',
                 action='store',
                 type=str,
