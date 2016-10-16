@@ -86,6 +86,7 @@ def insert_articles_to_lexicon(articles_filename, extracted_dir, lexicon):
         './yapl/wikiextractor/WikiExtractor.py',
         articles_filename,
         '-o', extracted_dir,
+        '-c',
         '-q'
     ]
     if not os.path.exists(extracted_dir):
@@ -102,7 +103,7 @@ def insert_articles_to_lexicon(articles_filename, extracted_dir, lexicon):
     unigrams = Counter()
     bigrams = defaultdict(lambda :defaultdict(int))
     for articlefile in  glob.glob(extracted_dir + '/*/*'):
-        with open(articlefile, 'r', encoding='utf-8') as f:
+        with bz2.open(articlefile, 'rt', encoding='utf8') as f:
             txt = f.readlines()[1:-1] # pass <doc *> and </doc> tags.
         tokens = list(map(lambda t: t.lower(),
                           chain.from_iterable(map(word_tokenize, txt))))
@@ -118,7 +119,6 @@ def insert_articles_to_lexicon(articles_filename, extracted_dir, lexicon):
             p_x_given_y = count_x_given_y / count_all_given_y
             p_x = unigrams[token_x] / count_all
             pmi = math.log(p_x_given_y/p_x)
-            print(pmi)
             if pmi >= threshold and token_x not in sw and token_y not in sw:
                 phrases.append(token_y + ' ' + token_x)
     return lexicon.insert_phrases(map(lambda x: (x, ), phrases))
