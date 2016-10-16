@@ -115,7 +115,7 @@ def insert_articles_to_lexicon(articles_filename, extracted_dir, lexicon):
         count_cond_tokens = sum(subtree.values())
         for token2, count in subtree.items():
             # pmi = log p_xy / p_x
-            pmi = (count / count_cond_tokens) / (count_cond_tokens / count_all_tokens)
+            pmi = (count / count_cond_tokens) / (unigrams[token1] / count_all_tokens)
             if pmi >= threshold and token1 not in sw and token2 not in sw:
                 phrases.append(token1 + ' ' + token2)
     return lexicon.insert_phrases(map(lambda x: (x, ), phrases))
