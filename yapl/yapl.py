@@ -110,14 +110,17 @@ def insert_articles_to_lexicon(articles_filename, extracted_dir, lexicon):
         for t1, t2 in zip(tokens, tokens[1:]):
             bigrams[t1][t2] += 1
     phrase_candidates = []
-    count_all_tokens = sum(unigrams.values())
-    for token1, subtree in bigrams.items():
-        count_cond_tokens = sum(subtree.values())
-        for token2, count in subtree.items():
-            # pmi = log p_xy / p_x
-            pmi = (count / count_cond_tokens) / (unigrams[token1] / count_all_tokens)
-            if pmi >= threshold and token1 not in sw and token2 not in sw:
-                phrases.append(token1 + ' ' + token2)
+    count_all = sum(unigrams.values())
+    for token_y, subtree in bigrams.items():
+        count_all_given_y = sum(subtree.values())
+        for token_x, count_x_given_y in subtree.items():
+            # pmi = log (p(x|y) / p(x))
+            p_x_given_y = count_x_given_y / count_all_given_y
+            p_x = unigrams[token_x] / count_all
+            pmi = math.log(p_x_given_y/p_x)
+            print(pmi)
+            if pmi >= threshold and token_x not in sw and token_y not in sw:
+                phrases.append(token_y + ' ' + token_x)
     return lexicon.insert_phrases(map(lambda x: (x, ), phrases))
 
 
@@ -161,12 +164,13 @@ def main():
     titles_filename = maybe_download(args.wiki_titles_url, args.wiki_titles_hash)
     print('start insertng enwiki pagetitles...')
     total_cnt = insert_pagetitles_to_lexicon(titles_filename, lexicon)
+    print('inserted {} page titles'.format(total_cnt))
 
     articles_filename = maybe_download(args.wiki_articles_url, args.wiki_articles_hash)
     print('start making phrases from articles...')
     total_cnt = insert_articles_to_lexicon(articles_filename, args.wiki_extracted_dir, lexicon)
+    print('inserted {} phrases extracted articles'.format(total_cnt))
 
-    print('inserted {} pagetitles'.format(total_cnt))
     print('done!')
 
 
