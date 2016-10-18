@@ -76,7 +76,10 @@ def insert_pagetitles_to_lexicon(filename, lexicon):
 
 
 def insert_articles_to_lexicon(articles_filename, extracted_dir, lexicon):
-    """get phrases from wikimedia articles"""
+    """get phrases from wikimedia articles
+
+    PMI based phrases are counted by bigrams using Lossy Counting
+    """
     if type(lexicon) != PhraseLexiconModel:
         raise Exception('Falied to access db.')
 
@@ -101,7 +104,11 @@ def insert_articles_to_lexicon(articles_filename, extracted_dir, lexicon):
     phrases = []
     threshold = 1000
     unigrams = Counter()
-    bigrams = defaultdict(lambda :defaultdict(int))
+    bigrams = defaultdict(dict) # as trie tree
+    n = 0 # token counter
+    delta = 5e-3 # param of Lossy Counting
+    bucket_ids = defaultdict(dict) # as trie tree
+    current_bucket_id = 1
     for articlefile in  glob.glob(extracted_dir + '/*/*'):
         with bz2.open(articlefile, 'rt', encoding='utf8') as f:
             txt = f.readlines()[1:-1] # pass <doc *> and </doc> tags.
@@ -109,13 +116,32 @@ def insert_articles_to_lexicon(articles_filename, extracted_dir, lexicon):
                           chain.from_iterable(map(word_tokenize, txt))))
         unigrams += Counter(tokens)
         for t1, t2 in zip(tokens, tokens[1:]):
-            bigrams[t1][t2] += 1
+            # count bigram
+            if t2 in bigrams[t1]:
+                bigrams[t1][t2] += 1
+            else:
+                bigrams[t1][t2] = 1
+                bucket_ids[t1][t2] = current_bucket_id - 1
+
+            # check it bundry of bucket
+            if n % int(1 / delta) == 0:
+                current_bucket_id += 1
+                # delete bigrams if it less than  threshold
+                deleted_bigram_queue = []
+                for t1, subtree in bigrams.items():
+                    for t2, count in subtree.items():
+                        if count <= current_bucket_id - bucket_ids[t1][t2]:
+                            deleted_bigram_queue.append((t1, t2))
+                for t1, t2 in deleted_bigram_queue:
+                    del bigrams[t1][t2]
+                    del bucket_ids[t1][t2]
+
     phrase_candidates = []
     count_all = sum(unigrams.values())
     for token_y, subtree in bigrams.items():
         count_all_given_y = sum(subtree.values())
         for token_x, count_x_given_y in subtree.items():
-            # pmi = log (p(x|y) / p(x))
+            # calc pmi = log (p(x|y) / p(x))
             p_x_given_y = count_x_given_y / count_all_given_y
             p_x = unigrams[token_x] / count_all
             pmi = math.log(p_x_given_y/p_x)
