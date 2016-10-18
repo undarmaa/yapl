@@ -99,16 +99,50 @@ def insert_articles_to_lexicon(articles_filename, extracted_dir, lexicon):
         print('Found extracted text')
 
     print('Search phrase candidates ...')
+
+    class BigramCounter():
+        """Bigram Counter using Lossy Counting"""
+        def __init__(self, delta):
+            self.n = 0
+            self.delta = delta
+            self.bigrams = defaultdict(dict)
+            self.bucket_ids = defaultdict(dict)
+            self.current_bucket_id = 1
+
+        def add(self, t1, t2):
+            self.n += 1
+            if t2 in self.bigrams[t1]:
+                self.bigrams[t1][t2] += 1
+            else:
+                self.bigrams[t1][t2] = 1
+                self.bucket_ids[t1][t2] = self.current_bucket_id - 1
+
+            if self.is_boundary_of_bucket():
+                self.move_next_bucket()
+
+        def is_boundary_of_bucket(self):
+            return self.n % int(1 / self.delta) == 0
+
+        def move_next_bucket(self):
+            self.current_bucket_id += 1
+            self.weed_out_bigrams()
+
+        def weed_out_bigrams(self):
+            deleted_bigram_queue = []
+            for t1, subtree in self.bigrams.items():
+                for t2, count in subtree.items():
+                    if count <= self.current_bucket_id - self.bucket_ids[t1][t2]:
+                        deleted_bigram_queue.append((t1, t2))
+            for t1, t2 in deleted_bigram_queue:
+                del self.bigrams[t1][t2]
+                del self.bucket_ids[t1][t2]
+
     mystopwords = ',.()[]{}:;\'"+=_-^&*%$#@!~`|\\<>?/'
     sw = stopwords.words("english") + list(mystopwords)
     phrases = []
     threshold = 1000
     unigrams = Counter()
-    bigrams = defaultdict(dict) # as trie tree
-    n = 0 # token counter
-    delta = 5e-3 # param of Lossy Counting
-    bucket_ids = defaultdict(dict) # as trie tree
-    current_bucket_id = 1
+    counter = BigramCounter(5e-3)
     for articlefile in  glob.glob(extracted_dir + '/*/*'):
         with bz2.open(articlefile, 'rt', encoding='utf8') as f:
             txt = f.readlines()[1:-1] # pass <doc *> and </doc> tags.
@@ -116,28 +150,9 @@ def insert_articles_to_lexicon(articles_filename, extracted_dir, lexicon):
                           chain.from_iterable(map(word_tokenize, txt))))
         unigrams += Counter(tokens)
         for t1, t2 in zip(tokens, tokens[1:]):
-            n += 1
+            counter.add(t1, t2)
 
-            # count bigram
-            if t2 in bigrams[t1]:
-                bigrams[t1][t2] += 1
-            else:
-                bigrams[t1][t2] = 1
-                bucket_ids[t1][t2] = current_bucket_id - 1
-
-            # check it bundry of bucket
-            if n % int(1 / delta) == 0:
-                current_bucket_id += 1
-                # delete bigrams if it less than  threshold
-                deleted_bigram_queue = []
-                for t1, subtree in bigrams.items():
-                    for t2, count in subtree.items():
-                        if count <= current_bucket_id - bucket_ids[t1][t2]:
-                            deleted_bigram_queue.append((t1, t2))
-                for t1, t2 in deleted_bigram_queue:
-                    del bigrams[t1][t2]
-                    del bucket_ids[t1][t2]
-
+    bigrams = counter.bigrams
     phrase_candidates = []
     count_all = sum(unigrams.values())
     for token_y, subtree in bigrams.items():
