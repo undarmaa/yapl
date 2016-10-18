@@ -116,6 +116,8 @@ def insert_articles_to_lexicon(articles_filename, extracted_dir, lexicon):
                           chain.from_iterable(map(word_tokenize, txt))))
         unigrams += Counter(tokens)
         for t1, t2 in zip(tokens, tokens[1:]):
+            n += 1
+
             # count bigram
             if t2 in bigrams[t1]:
                 bigrams[t1][t2] += 1
