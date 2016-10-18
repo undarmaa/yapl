@@ -102,20 +102,22 @@ def insert_articles_to_lexicon(articles_filename, extracted_dir, lexicon):
 
     class BigramCounter():
         """Bigram Counter using Lossy Counting"""
-        def __init__(self, delta):
+        def __init__(self, delta, stopwords=[]):
             self.n = 0
             self.delta = delta
             self.bigrams = defaultdict(dict)
             self.bucket_ids = defaultdict(dict)
             self.current_bucket_id = 1
+            self.stopwords = stopwords
 
         def add(self, t1, t2):
             self.n += 1
-            if t2 in self.bigrams[t1]:
-                self.bigrams[t1][t2] += 1
-            else:
-                self.bigrams[t1][t2] = 1
-                self.bucket_ids[t1][t2] = self.current_bucket_id - 1
+            if t1 not in self.stopwords and t2 not in self.stopwords:
+                if t2 in self.bigrams[t1]:
+                    self.bigrams[t1][t2] += 1
+                else:
+                    self.bigrams[t1][t2] = 1
+                    self.bucket_ids[t1][t2] = self.current_bucket_id - 1
 
             if self.is_boundary_of_bucket():
                 self.move_next_bucket()
@@ -142,7 +144,7 @@ def insert_articles_to_lexicon(articles_filename, extracted_dir, lexicon):
     phrases = []
     threshold = 1000
     unigrams = Counter()
-    counter = BigramCounter(5e-3)
+    counter = BigramCounter(5e-3, sw)
     for articlefile in  glob.glob(extracted_dir + '/*/*'):
         with bz2.open(articlefile, 'rt', encoding='utf8') as f:
             txt = f.readlines()[1:-1] # pass <doc *> and </doc> tags.
@@ -162,7 +164,7 @@ def insert_articles_to_lexicon(articles_filename, extracted_dir, lexicon):
             p_x_given_y = count_x_given_y / count_all_given_y
             p_x = unigrams[token_x] / count_all
             pmi = math.log(p_x_given_y/p_x)
-            if pmi >= threshold and token_x not in sw and token_y not in sw:
+            if pmi >= threshold:
                 phrases.append(token_y + ' ' + token_x)
     return lexicon.insert_phrases(map(lambda x: (x, ), phrases))
 
